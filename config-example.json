@@ -1,0 +1,11 @@
+{
+    "gravador": "POA-A",
+    "servidor": "localhost:8080",
+    "upload": true,
+    "channels-file": "sr_channels.conf",
+    "adapters": [
+        { "adapter": 1, "service-name": "RBS TV 1seg", "praca": "POA", "rede": 200 },
+        { "adapter": 2, "service-name": "RBS TV HD", "praca": "POA", "rede": 200, "scale": "320:180", "caminho": "/caminho/200", "inserirFila": true },
+	{ "adapter": 1, "service-name": "RBS TV HD", "praca": "POA", "rede": 200, "scale": "960:720" }
+    ]
+}

@@ -1,0 +1,49 @@
+# Etapa 1 - Compila o JAR com Maven
+FROM --platform=linux/amd64 maven:3.9.6-eclipse-temurin-21 as builder
+WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean package -DskipTests
+
+# Etapa 2 - Ambiente GraalVM ARM64 com native-image já incluso
+FROM --platform=linux/arm64 ubuntu:24.04 as graalvm
+WORKDIR /app
+
+# Instala dependências mínimas
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    zlib1g-dev \
+    curl \
+    unzip \
+    libz-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copia o GraalVM TAR local e descompacta (você precisa tê-lo no mesmo diretório do Dockerfile)
+COPY graalvm-community-jdk-21.0.2_linux-aarch64_bin.tar.gz /tmp/
+RUN mkdir -p /opt/graalvm && \
+    tar -xzf /tmp/graalvm-community-jdk-21.0.2_linux-aarch64_bin.tar.gz --strip-components=1 -C /opt/graalvm
+
+ENV PATH="/opt/graalvm/bin:$PATH"
+ENV JAVA_HOME="/opt/graalvm"
+
+# Copia artefatos da aplicação
+COPY --from=builder /app/target/gravador3-1.0-SNAPSHOT.jar app.jar
+COPY config-example.json .
+COPY sr_channels.conf .
+
+# Compila com native-image
+RUN native-image \
+    --no-fallback \
+    -H:+UnlockExperimentalVMOptions \
+    -H:Name=app-arm64 \
+    -H:IncludeResources=config-example.json \
+    -H:IncludeResources=sr_channels.conf \
+    -cp app.jar br.com.spotcom.gravador.Main
+
+# Etapa 3 - Imagem mínima com o binário
+FROM --platform=linux/arm64 ubuntu:24.04
+WORKDIR /app
+COPY --from=graalvm /app/app-arm64 .
+COPY config-example.json .
+COPY sr_channels.conf .
+ENTRYPOINT ["/app/app-arm64"]

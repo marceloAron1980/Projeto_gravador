@@ -9,24 +9,26 @@ RUN mvn clean package -DskipTests
 FROM --platform=linux/arm64 ubuntu:24.04 as graalvm
 WORKDIR /app
 
-# Instalar dependências para o native-image
 RUN apt-get update && apt-get install -y \
-    build-essential zlib1g-dev curl unzip \
+    build-essential zlib1g-dev curl unzip libz-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Instalar o GraalVM manualmente
-COPY graalvm-community-jdk-21.0.2_linux-aarch64_bin.tar.gz /tmp/
-RUN mkdir -p /opt/graalvm && \
-    tar -xzf /tmp/graalvm-community-jdk-21.0.2_linux-aarch64_bin.tar.gz --strip-components=1 -C /opt/graalvm
-ENV JAVA_HOME="/opt/graalvm"
-ENV PATH="$JAVA_HOME/bin:$PATH"
+# Baixando o GraalVM direto da fonte
+ENV GRAAL_VERSION=21.0.2
+ENV GRAAL_FILENAME=graalvm-community-jdk-${GRAAL_VERSION}_linux-aarch64_bin.tar.gz
+ENV GRAAL_URL=https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${GRAAL_VERSION}/${GRAAL_FILENAME}
 
-# Copiar arquivos do build
-COPY --from=builder /app/target/*.jar app.jar
+RUN curl -L -o /tmp/${GRAAL_FILENAME} ${GRAAL_URL} && \
+    mkdir -p /opt/graalvm && \
+    tar -xzf /tmp/${GRAAL_FILENAME} --strip-components=1 -C /opt/graalvm
+
+ENV PATH="/opt/graalvm/bin:$PATH"
+ENV JAVA_HOME="/opt/graalvm"
+
+COPY --from=builder /app/target/gravador3-1.0-SNAPSHOT.jar app.jar
 COPY config-example.json .
 COPY sr_channels.conf .
 
-# Gerar o executável nativo com o GraalVM
 RUN native-image \
     --no-fallback \
     -H:+UnlockExperimentalVMOptions \

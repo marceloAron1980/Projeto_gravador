@@ -7,12 +7,16 @@ RUN mvn clean package -DskipTests
 
 # Etapa 2 - GraalVM ARM64 com native-image
 FROM --platform=linux/arm64 ubuntu:22.04 as graalvm
+
 WORKDIR /app
 
-# Corrigindo erro de instalação
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    build-essential zlib1g-dev curl unzip libz-dev && \
+    build-essential \
+    zlib1g-dev \
+    curl \
+    unzip \
+    libz-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # Baixando o GraalVM direto da fonte

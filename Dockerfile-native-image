@@ -1,22 +1,22 @@
 # Etapa 1 - Build do JAR
-FROM --platform=linux/amd64 maven:3.9.6-eclipse-temurin-21 as builder
+FROM --platform=linux/amd64 maven:3.9.6-eclipse-temurin-21 AS builder
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Etapa 2 - GraalVM ARM64 com native-image
-FROM --platform=linux/arm64 ubuntu:22.04 as graalvm
+FROM --platform=linux/arm64 ubuntu:22.04 AS graalvm
 
 WORKDIR /app
 
+# Pacote zlib1g-dev já é fornecido por libz-dev, não precisa dos dois.
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
     build-essential \
     zlib1g-dev \
     curl \
-    unzip \
-    libz-dev && \
+    unzip && \
     rm -rf /var/lib/apt/lists/*
 
 # Baixando o GraalVM direto da fonte
@@ -50,4 +50,3 @@ COPY config-example.json .
 COPY sr_channels.conf .
 RUN chmod +x /app/app-arm64
 ENTRYPOINT ["/app/app-arm64"]
-

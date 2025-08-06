@@ -32,7 +32,7 @@ jobs:
           file: ./Dockerfile-native-image # Certifique-se que o caminho está correto
           platforms: linux/arm64
           push: true
-          tags: marcello1980/projeto-gravador:latest
+          tags: marcelo1980/projeto-gravador:latest
 
 
           

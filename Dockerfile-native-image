@@ -55,3 +55,4 @@ COPY --from=graalvm /app/app-arm64 .
 # COPY sr_channels.conf .
 RUN chmod +x /app/app-arm64
 ENTRYPOINT ["/app/app-arm64"]
+# Forçando a execução do build v3

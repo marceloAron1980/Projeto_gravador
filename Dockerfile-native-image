@@ -44,9 +44,14 @@ RUN native-image \
 
 # Etapa 3 - Imagem final otimizada e leve
 FROM --platform=linux/arm64 ubuntu:24.04
+
+# Instala a dependência de tempo de execução para zlib, que é necessária pelo executável
+RUN apt-get update && apt-get install -y zlib1g && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 COPY --from=graalvm /app/app-arm64 .
-COPY config-example.json .
-COPY sr_channels.conf .
+# Não precisamos mais copiar os arquivos de config para a imagem, pois eles serão montados via volume
+# COPY config-example.json .
+# COPY sr_channels.conf .
 RUN chmod +x /app/app-arm64
 ENTRYPOINT ["/app/app-arm64"]

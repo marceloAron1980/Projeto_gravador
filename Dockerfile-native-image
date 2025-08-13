@@ -7,10 +7,7 @@ RUN mvn clean package -DskipTests
 
 # Etapa 2 - GraalVM ARM64 com native-image
 FROM --platform=linux/arm64 ubuntu:22.04 AS graalvm
-
 WORKDIR /app
-
-# Pacote zlib1g-dev já é fornecido por libz-dev, não precisa dos dois.
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
     build-essential \
@@ -19,7 +16,6 @@ RUN apt-get update && \
     unzip && \
     rm -rf /var/lib/apt/lists/*
 
-# Baixando o GraalVM direto da fonte
 ENV GRAAL_VERSION=21.0.2
 ENV GRAAL_FILENAME=graalvm-community-jdk-${GRAAL_VERSION}_linux-aarch64_bin.tar.gz
 ENV GRAAL_URL=https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${GRAAL_VERSION}/${GRAAL_FILENAME}
@@ -35,24 +31,21 @@ COPY --from=builder /app/target/gravador3-1.0-SNAPSHOT.jar app.jar
 COPY config-example.json .
 COPY sr_channels.conf .
 
+# Comando native-image CORRIGIDO - Removida a linha -H:IncludeResources
 RUN native-image \
     --no-fallback \
     -H:+UnlockExperimentalVMOptions \
     -H:Name=app-arm64 \
-    -H:IncludeResources='config-example.json|sr_channels.conf' \
     -cp app.jar br.com.spotcom.gravador.Main
 
 # Etapa 3 - Imagem final otimizada e leve
-FROM --platform=linux/arm64 ubuntu:24.04
+# Base alterada para Debian Slim, mais leve e compatível com Raspberry Pi
+FROM arm64v8/debian:12-slim
 
-# Instala a dependência de tempo de execução para zlib, que é necessária pelo executável
+# Instala a dependência de tempo de execução para zlib
 RUN apt-get update && apt-get install -y zlib1g && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY --from=graalvm /app/app-arm64 .
-# Não precisamos mais copiar os arquivos de config para a imagem, pois eles serão montados via volume
-# COPY config-example.json .
-# COPY sr_channels.conf .
 RUN chmod +x /app/app-arm64
 ENTRYPOINT ["/app/app-arm64"]
-# Forçando a execução do build v3

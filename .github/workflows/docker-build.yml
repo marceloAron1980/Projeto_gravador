@@ -33,10 +33,4 @@ jobs:
           platforms: linux/arm64/v8
           push: true
           tags: marcelo1980/projeto-gravador:latest
-
-# Build definitivo - 15 de Agosto
-
-          
-
-
-          
+# Build Sincronizado - 19 de Agosto
